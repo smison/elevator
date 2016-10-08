@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>「えれべーたー」をクリックするゲーム</title>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width" >
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+
+    <style type="text/css">
+        #text {
+            font-size: 13px;
+            margin-left: 30px;
+        }
+        p {
+            font-size: 14px;
+        }
+        a:link    { color: #000000; }
+        a:visited { color: #000000; }
+        a:hover   { color: #000000; }
+        a:active  { color: #000000; }
+    </style>
+    <script src='http://cdn.rawgit.com/phi-jp/phina.js/v0.2.0/build/phina.js'></script>
+    <script>
+        //============================================
+        // VARIABLES
+        //============================================
+        phina.globalize();
+        var SCREEN_WIDTH = 600;
+        var SCREEN_HEIGHT = 400;
+        var MAX_TIME_LIMIT = 1000;
+        var TITLE = "「えれべーたー」\nをクリックするゲーム";
+        var ASSETS = {
+            image: {
+                'fukidashi': './images/fukidashi.png',
+                'fukidashi_text': './images/fukidashi_text.png',
+                'title' : './images/title.png',
+                'hito': './images/hito.png',
+                'gameover': './images/gameover.png'
+            },
+            spritesheet: {
+                'title_ss': {
+                    "frame": {
+                        "width": 600,
+                        "height": 400,
+                        "rows": 1,
+                        "cols": 5
+                    },
+                    "animations": {
+                        "normal": {
+                            "frames": [0, 1, 2, 3, 4],
+                            "next": "normal",
+                            "frequency": 2
+                        }
+                    }
+                },
+                'hito_ss': {
+                    "frame": {
+                        "width": 240,
+                        "height": 240,
+                        "rows": 1,
+                        "cols": 5
+                    },
+                    "animations": {
+                        "normal": {
+                            "frames": [0, 1, 2, 3, 4],
+                            "next": "normal",
+                            "frequency": 2
+                        }
+                    }
+                },
+                'fukidashi_ss': {
+                    "frame": {
+                        "width": 200,
+                        "height": 300,
+                        "rows": 2,
+                        "cols": 5
+                    },
+                    "animations": {
+                        "right": {
+                            "frames": [0, 1, 2, 3, 4],
+                            "next": "right",
+                            "frequency": 2
+                        },
+                        "left": {
+                            "frames": [5, 6, 7, 8, 9],
+                            "next": "left",
+                            "frequency": 2
+                        }
+                    }
+                },
+                'fukidashi_text_ss': {
+                    "frame": {
+                        "width": 200,
+                        "height": 300,
+                        "rows": 4,
+                        "cols": 5
+                    },
+                    "animations": {
+                        "collect_1": {
+                            "frames": [0, 1, 2, 3, 4],
+                            "next": "collect_1",
+                            "frequency": 2
+                        },
+                        "collect_2": {
+                            "frames": [5, 6, 7, 8, 9],
+                            "next": "collect_2",
+                            "frequency": 2
+                        },
+                        "wrong_1": {
+                            "frames": [10, 11, 12, 13, 14],
+                            "next": "wrong_1",
+                            "frequency": 2
+                        },
+                        "wrong_2": {
+                            "frames": [15, 16, 17, 18, 19],
+                            "next": "wrong_2",
+                            "frequency": 2
+                        }
+                    }
+                },
+                'gameover_ss': {
+                    "frame": {
+                        "width": 600,
+                        "height": 400,
+                        "rows": 1,
+                        "cols": 5
+                    },
+                    "animations": {
+                        "normal": {
+                            "frames": [0, 1, 2, 3, 4],
+                            "next": "normal",
+                            "frequency": 2
+                        }
+                    }
+                }
+            }
+        };
+        // シーン
+        var scene = 'title';
+        // フキダシ存在フラグ
+        var exists_fukidashi = true;
+        // ゲームオーバーフラグ
+        var is_gameover = false;
+
+        //============================================
+        // マネージャーシーン
+        //============================================
+        phina.define('MyManagerScene', {
+            superClass: 'ManagerScene',
+            init: function () {
+                this.superInit({
+                    scenes: [
+                        // タイトル
+                        {
+                            label: 'mytitle',
+                            className: 'MyTitleScene',
+                            nextLabel: 'main'
+                        },
+                        // メイン
+                        {
+                            label: "main",
+                            className: "MainScene",
+                            nextLabel: 'gameover'
+                        },
+                        {
+                            label: "gameover",
+                            className: "GameOverScene",
+                            nextLabel: 'mytitle'
+                        }
+                    ]
+                });
+            }
+        });
+
+        //============================================
+        // タイトルシーン
+        //============================================
+        phina.define('MyTitleScene', {
+            superClass: 'DisplayScene',
+
+            init: function () {
+                this.superInit({
+                    width: SCREEN_WIDTH,
+                    height: SCREEN_HEIGHT
+                });
+
+                var label = Label(TITLE).addChildTo(this);
+                label.x = this.gridX.center();
+                label.y = this.gridY.center();
+
+                this.fontColor = 'black';
+                this.backgroundColor = 'white';
+            },
+            onclick: function () {
+                //次のシーンへ移動
+                this.exit();
+            }
+        });
+
+        //============================================
+        // メインシーン
+        //============================================
+        phina.define('MainScene', {
+            superClass: 'DisplayScene',
+            // コンストラクタ
+            init: function () {
+                // 親クラス初期化
+                this.superInit({
+                    width: SCREEN_WIDTH,
+                    height: SCREEN_HEIGHT
+                });
+                this.set_title();
+            },
+
+            // 毎フレーム処理
+            update: function () {
+                //////////////
+                //// main ////
+                //////////////
+                if(scene == 'main') {
+                    // スピード更新
+                    this.speed = this.update_speed();
+
+                    // タイムアップ
+                    this.timelimit.width -= this.speed;
+                    if(this.timelimit.width <= 0 && !is_gameover) {
+                        is_gameover = true;
+                    }
+
+                    // ゲームオーバーフラグがたっていたらゲームオーバー
+                    if(is_gameover) {
+                        ////////////////////////
+                        /// main => gameover ///
+                        ////////////////////////
+                        is_gameover = false;
+                        this.set_gameover();
+                    }
+
+                    // フキダシ更新
+                    if(!exists_fukidashi && scene == 'main') {
+                        this.score += 1;
+                        this.collect.remove();
+                        this.wrong.remove();
+                        exists_fukidashi = true;
+                        this.show_fukidashi();
+
+                        // タイムリミット回復
+                        this.timelimit.width = MAX_TIME_LIMIT;
+                    }
+                }
+            },
+
+            onclick: function () {
+                /////////////////////
+                /// title => main ///
+                /////////////////////
+                if(scene == 'title') {
+                    scene = 'main';
+                    exists_fukidashi = true;
+                    this.title.remove();
+                    this.set_main();
+                }
+
+
+                /////////////////////////
+                /// gameover => title ///
+                /////////////////////////
+                if(scene == 'gameover') {
+                    scene = 'title';
+                    this.gameover.remove();
+                    this.resultLabel.remove();
+                    this.set_title();
+                }
+            },
+
+            onpointstart: function (app) {
+                var pointer_x = app.pointer.x;
+                var pointer_y = app.pointer.y;
+
+                // タッチ箇所のズレを見やすくするためにポインタ表示
+                var t = TouchPoint().addChildTo(this);
+                t.x = pointer_x;
+                t.y = pointer_y;
+            },
+
+            set_title: function() {
+                // タイトル
+                this.title = Title('title').addChildTo(this);
+                this.title.x = this.gridX.center();
+                this.title.y = this.gridY.center();
+            },
+
+            set_main: function () {
+                // 人
+                this.hito = Hito('hito').addChildTo(this);
+                this.hito.x = this.gridX.center();
+                this.hito.y = this.gridY.span(11);
+
+                // スコアラベル
+                this.scoreLabel = Label('0えれべーたー').addChildTo(this);
+                this.scoreLabel.x = this.gridX.center();
+                this.scoreLabel.y = this.gridY.span(2.5);
+
+                // スコア
+                this.score = 0;
+
+                // タイムリミット
+                this.timelimit = TimeLimit(MAX_TIME_LIMIT, 50).addChildTo(this);
+
+                this.show_fukidashi();
+            },
+
+            set_gameover: function() {
+                scene = 'gameover';
+                this.collect.remove();
+                this.wrong.remove();
+                this.timelimit.remove();
+                this.hito.remove();
+                this.scoreLabel.remove();
+
+                this.gameover = Gameover('gameover').addChildTo(this);
+                this.gameover.x = this.gridX.center();
+                this.gameover.y = this.gridY.center();
+
+                this.resultLabel = Label(this.score + 'えれべーたー').addChildTo(this);
+                this.resultLabel.x = this.gridX.span(12);
+                this.resultLabel.y = this.gridY.span(3);
+            },
+
+            show_fukidashi: function() {
+                // フキダシ
+                var is_collect_left = Math.floor(Math.random() * 2) == 1;
+                var collect = null;
+                var wrong = null;
+
+                if(is_collect_left) {
+                    collect = Fukidashi('fukidashi', true, true).addChildTo(this);
+                    wrong = Fukidashi('fukidashi', false, false).addChildTo(this);
+
+                    // フキダシ(正・左)
+                    collect.x = this.gridX.span(2) + 20;
+                    collect.y = this.gridY.center() + 45;
+
+                    // フキダシ(誤・右)
+                    wrong.x = this.gridX.span(13) + 30;
+                    wrong.y = this.gridY.center() + 45;
+                } else {
+                    collect = Fukidashi('fukidashi', true, false).addChildTo(this);
+                    wrong = Fukidashi('fukidashi', false, true).addChildTo(this);
+
+                    // フキダシ(誤・左)
+                    wrong.x = this.gridX.span(2) + 20;
+                    wrong.y = this.gridY.center() + 45;
+
+                    // フキダシ(正・右)
+                    collect.x = this.gridX.span(13) + 30;
+                    collect.y = this.gridY.center() + 45;
+                }
+
+                // 参照用
+                this.collect = collect;
+                this.wrong = wrong;
+            },
+
+            update_speed: function () {
+                if(this.score <= 10) {
+                    return 3;
+                } else if(this.score <= 20) {
+                    return 10;
+                } else if(this.score <= 30) {
+                    return 20;
+                } else if(this.score <= 40) {
+                    return 30;
+                } else if(this.score <= 50) {
+                    return 40;
+                }
+                return 50;
+            },
+
+            _accessor: {
+                score: {
+                    get: function() {
+                        return this._score;
+                    },
+                    set: function(v) {
+                        this._score = v;
+                        this.scoreLabel.text = v + "えれべーたー";
+                    }
+                }
+            }
+        });
+
+        phina.define('Fukidashi', {
+            superClass: 'Sprite',
+
+            init: function (image, is_collect, is_left) {
+                this.superInit(image);
+                this.anim = FrameAnimation('fukidashi_ss').attachTo(this);
+
+                if(is_left) {
+                    this.anim.gotoAndPlay('left');
+                } else {
+                    this.anim.gotoAndPlay('right');
+                }
+
+                this.setInteractive(true);
+                this.is_collect = is_collect;
+                this.fukidashi_text = FukidashiText('fukidashi_text', is_collect).addChildTo(this);
+                this.fukidashi_text.x = 0;
+                this.fukidashi_text.y = 0;
+
+            },
+            onpointend: function () {
+                exists_fukidashi = false;
+                if(!this.is_collect) {
+                    is_gameover = true;
+                }
+            }
+        });
+
+        phina.define('FukidashiText', {
+            superClass: 'Sprite',
+
+            init: function (image, is_collect) {
+                this.superInit(image, is_collect);
+                this.anim = FrameAnimation('fukidashi_text_ss').attachTo(this);
+                var rand =  Math.floor(Math.random() * 2) + 1;
+                if(is_collect) {
+                    this.anim.gotoAndPlay('collect_' + rand);
+                } else {
+                    this.anim.gotoAndPlay('wrong_' + rand);
+                }
+            }
+        });
+
+        phina.define('Title', {
+            superClass: 'Sprite',
+
+            init: function (image) {
+                this.superInit(image);
+                this.anim = FrameAnimation('title_ss').attachTo(this);
+                this.anim.gotoAndPlay('normal');
+            }
+        });
+
+        phina.define('Gameover', {
+            superClass: 'Sprite',
+
+            init: function (image) {
+                this.superInit(image);
+                this.anim = FrameAnimation('gameover_ss').attachTo(this);
+                this.anim.gotoAndPlay('normal');
+                this.setInteractive(true);
+            }
+        });
+
+        phina.define('Hito', {
+            superClass: 'Sprite',
+
+            init: function (image) {
+                this.superInit(image);
+                this.anim = FrameAnimation('hito_ss').attachTo(this);
+                this.anim.gotoAndPlay('normal');
+            }
+        });
+
+        phina.define('RetryButton', {
+            superClass: 'Sprite',
+
+            init: function (image) {
+                this.superInit(image);
+                this.anim = FrameAnimation('hito_ss').attachTo(this);
+                this.anim.gotoAndPlay('normal');
+                this.setInteractive(true);
+            },
+            onpointend: function () {
+            }
+        });
+
+        phina.define('TouchPoint', {
+            superClass: 'CircleShape',
+            init: function () {
+                this.superInit({
+                    stroke: false,
+                    radius: 5,
+                    fill: 'hsl({0}, 80%, 60%)'.format(Math.randint(0, 360))
+                });
+            },
+
+            update: function () {
+                this.radius += 3;
+                if (this.radius > 30) {
+                    this.remove();
+                }
+            }
+        });
+
+        phina.define('TimeLimit', {
+            superClass: 'RectangleShape',
+            init: function (w, h) {
+                this.superInit({
+                    stroke: false,
+                    width: w,
+                    height: h,
+                    fill: 'black'
+                });
+            }
+        });
+
+        //============================================
+        // ゲームオーバーシーン
+        //============================================
+        phina.define("GameOverScene", {
+            superClass: "ResultScene",
+
+            init: function () {
+                this.bg = Sprite("bg").addChildTo(this);
+                this.bg.x = this.gridX.center();
+                this.bg.y = this.gridY.center();
+
+                // ツイートボタン機能を自前で用意するならこれ使う
+                // var url = phina.social.Twitter.createURL({
+                //     text: "aaa",
+                //     hashtags: "ppp",
+                //     url: "kkk"
+                // });
+                //window.open(url, 'share window', 'width=480, height=320');
+            }
+        });
+
+        //============================================
+        // RUN
+        //============================================
+        phina.main(function () {
+            var app = GameApp({
+                query: "#game",
+                width: SCREEN_WIDTH,
+                height: SCREEN_HEIGHT,
+                assets: ASSETS,
+                title: TITLE,
+		        startLabel: 'main', // ManagerSceneは使わない
+                fit: false
+            });
+
+            // 作成したManagerSceneを使うにはこれが必要
+            // app.replaceScene(MyManagerScene());
+            app.run();
+
+            // 表示サイズ
+            var wrapper = document.getElementById("game");
+            wrapper.style.width = SCREEN_WIDTH + "px";
+            wrapper.style.height = SCREEN_HEIGHT + "px";
+        });
+    </script>
+</head>
+<body>
+    <canvas style="border: solid 1px;" id='game'></canvas>
+
+    <div id="text">
+        <br />
+        <p>「えれべーたー」をクリックするゲーム</p>
+        <br />
+        <a href="https://github.com/smison/elevator">smison/elevator</a>
+        <br />
+        <a href="https://twitter.com/smison">@smison</a>
+        <br />
+        <br />
+        <a href="https://twitter.com/share" class="twitter-share-button"{count}>Tweet</a>
+        <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+    </div>
+</body>
+</html>
