@@ -20,7 +20,7 @@
         a:hover   { color: #000000; }
         a:active  { color: #000000; }
     </style>
-    <script src='https://cdn.rawgit.com/phi-jp/phina.js/v0.2.0/build/phina.js'></script>
+    <script src='http://cdn.rawgit.com/phi-jp/phina.js/v0.2.0/build/phina.js'></script>
     <script>
         //============================================
         // VARIABLES
@@ -29,7 +29,7 @@
         var SCREEN_WIDTH = 600;
         var SCREEN_HEIGHT = 400;
         var MAX_TIME_LIMIT = 1000;
-        var TITLE = "「えれべーたー」\nをクリックするゲーム";
+        var TITLE = "「えれべーたー」をクリックするゲーム";
         var ASSETS = {
             image: {
                 'fukidashi': './images/fukidashi.png',
@@ -154,68 +154,11 @@
         var is_gameover = false;
 
         //============================================
-        // マネージャーシーン
-        //============================================
-        phina.define('MyManagerScene', {
-            superClass: 'ManagerScene',
-            init: function () {
-                this.superInit({
-                    scenes: [
-                        // タイトル
-                        {
-                            label: 'mytitle',
-                            className: 'MyTitleScene',
-                            nextLabel: 'main'
-                        },
-                        // メイン
-                        {
-                            label: "main",
-                            className: "MainScene",
-                            nextLabel: 'gameover'
-                        },
-                        {
-                            label: "gameover",
-                            className: "GameOverScene",
-                            nextLabel: 'mytitle'
-                        }
-                    ]
-                });
-            }
-        });
-
-        //============================================
-        // タイトルシーン
-        //============================================
-        phina.define('MyTitleScene', {
-            superClass: 'DisplayScene',
-
-            init: function () {
-                this.superInit({
-                    width: SCREEN_WIDTH,
-                    height: SCREEN_HEIGHT
-                });
-
-                var label = Label(TITLE).addChildTo(this);
-                label.x = this.gridX.center();
-                label.y = this.gridY.center();
-
-                this.fontColor = 'black';
-                this.backgroundColor = 'white';
-            },
-            onclick: function () {
-                //次のシーンへ移動
-                this.exit();
-            }
-        });
-
-        //============================================
         // メインシーン
         //============================================
         phina.define('MainScene', {
             superClass: 'DisplayScene',
-            // コンストラクタ
             init: function () {
-                // 親クラス初期化
                 this.superInit({
                     width: SCREEN_WIDTH,
                     height: SCREEN_HEIGHT
@@ -223,13 +166,11 @@
                 this.set_title();
             },
 
-            // 毎フレーム処理
             update: function () {
                 //////////////
                 //// main ////
                 //////////////
                 if(scene == 'main') {
-                    // スピード更新
                     this.speed = this.update_speed();
 
                     // タイムアップ
@@ -288,7 +229,7 @@
                 var pointer_x = app.pointer.x;
                 var pointer_y = app.pointer.y;
 
-                // タッチ箇所のズレを見やすくするためにポインタ表示
+                // タッチ箇所を見やすくするためにポインタ表示
                 var t = TouchPoint().addChildTo(this);
                 t.x = pointer_x;
                 t.y = pointer_y;
@@ -367,8 +308,6 @@
                     collect.x = this.gridX.span(13) + 30;
                     collect.y = this.gridY.center() + 45;
                 }
-
-                // 参照用
                 this.collect = collect;
                 this.wrong = wrong;
             },
@@ -475,19 +414,6 @@
             }
         });
 
-        phina.define('RetryButton', {
-            superClass: 'Sprite',
-
-            init: function (image) {
-                this.superInit(image);
-                this.anim = FrameAnimation('hito_ss').attachTo(this);
-                this.anim.gotoAndPlay('normal');
-                this.setInteractive(true);
-            },
-            onpointend: function () {
-            }
-        });
-
         phina.define('TouchPoint', {
             superClass: 'CircleShape',
             init: function () {
@@ -519,27 +445,6 @@
         });
 
         //============================================
-        // ゲームオーバーシーン
-        //============================================
-        phina.define("GameOverScene", {
-            superClass: "ResultScene",
-
-            init: function () {
-                this.bg = Sprite("bg").addChildTo(this);
-                this.bg.x = this.gridX.center();
-                this.bg.y = this.gridY.center();
-
-                // ツイートボタン機能を自前で用意するならこれ使う
-                // var url = phina.social.Twitter.createURL({
-                //     text: "aaa",
-                //     hashtags: "ppp",
-                //     url: "kkk"
-                // });
-                //window.open(url, 'share window', 'width=480, height=320');
-            }
-        });
-
-        //============================================
         // RUN
         //============================================
         phina.main(function () {
@@ -549,18 +454,10 @@
                 height: SCREEN_HEIGHT,
                 assets: ASSETS,
                 title: TITLE,
-		        startLabel: 'main', // ManagerSceneは使わない
+		        startLabel: 'main',
                 fit: false
             });
-
-            // 作成したManagerSceneを使うにはこれが必要
-            // app.replaceScene(MyManagerScene());
             app.run();
-
-            // 表示サイズ
-            var wrapper = document.getElementById("game");
-            wrapper.style.width = SCREEN_WIDTH + "px";
-            wrapper.style.height = SCREEN_HEIGHT + "px";
         });
     </script>
 </head>
