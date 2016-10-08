@@ -93,7 +93,7 @@
                     "frame": {
                         "width": 200,
                         "height": 300,
-                        "rows": 4,
+                        "rows": 6,
                         "cols": 5
                     },
                     "animations": {
@@ -107,14 +107,24 @@
                             "next": "collect_2",
                             "frequency": 2
                         },
-                        "wrong_1": {
+                        "collect_3": {
                             "frames": [10, 11, 12, 13, 14],
+                            "next": "collect_3",
+                            "frequency": 2
+                        },
+                        "wrong_1": {
+                            "frames": [15, 16, 17, 18, 19],
                             "next": "wrong_1",
                             "frequency": 2
                         },
                         "wrong_2": {
-                            "frames": [15, 16, 17, 18, 19],
+                            "frames": [20, 21, 22, 23, 24],
                             "next": "wrong_2",
+                            "frequency": 2
+                        },
+                        "wrong_3": {
+                            "frames": [25, 26, 27, 28, 29],
+                            "next": "wrong_3",
                             "frequency": 2
                         }
                     }
@@ -425,7 +435,7 @@
             init: function (image, is_collect) {
                 this.superInit(image, is_collect);
                 this.anim = FrameAnimation('fukidashi_text_ss').attachTo(this);
-                var rand =  Math.floor(Math.random() * 2) + 1;
+                var rand =  Math.floor(Math.random() * 3) + 1;
                 if(is_collect) {
                     this.anim.gotoAndPlay('collect_' + rand);
                 } else {
