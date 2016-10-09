@@ -1,4 +1,3 @@
-# elevator
-「えれべーたー」をクリックするゲーム
+# 「えれべーたー」をクリックするゲーム
 
 https://smison.github.io/elevator/
