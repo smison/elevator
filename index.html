@@ -163,10 +163,6 @@
 			nextLabel: 'title',
 		},
 	];
-        // フキダシ存在フラグ
-        var exists_fukidashi = true;
-        // ゲームオーバーフラグ
-        var is_gameover = false;
 
         //============================================
         // タイトルシーン
@@ -212,7 +208,6 @@
             },
 
             onclick: function () {
-		is_gameover = false;
 		this.exit();
             },
 	});
@@ -229,6 +224,7 @@
                     height: SCREEN_HEIGHT
                 });
                 this.set_main();
+                this.is_gameover = false;
             },
 
             update: function () {
@@ -239,20 +235,20 @@
 			this.exit("gameover", {score: this.score});
                     }
 
-		    if(is_gameover) {
-			this.exit("gameover", {score: this.score});
-                    }
-
-                    // フキダシ更新
-                    if(!exists_fukidashi) {
+                    // 正解
+                    if(this.collect.is_touched) {
                         this.score += 1;
                         this.collect.remove();
                         this.wrong.remove();
-                        exists_fukidashi = true;
                         this.show_fukidashi();
 
                         // タイムリミット回復
                         this.timelimit.width = MAX_TIME_LIMIT;
+                    }
+
+                    // 不正解
+                    if(this.wrong.is_touched) {
+                        this.exit("gameover", {score: this.score});
                     }
             },
 
@@ -366,13 +362,10 @@
                 this.fukidashi_text = FukidashiText('fukidashi_text', is_collect).addChildTo(this);
                 this.fukidashi_text.x = 0;
                 this.fukidashi_text.y = 0;
-
+                this.is_touched = false;
             },
             onpointend: function () {
-                exists_fukidashi = false;
-                if(!this.is_collect) {
-                    is_gameover = true;
-                }
+                this.is_touched = true;
             }
         });
 
