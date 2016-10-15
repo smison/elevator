@@ -238,6 +238,7 @@
                     // 正解
                     if(this.collect.is_touched) {
                         this.score += 1;
+                        this.scoreLabel.text = this.score + "えれべーたー";
                         this.collect.remove();
                         this.wrong.remove();
                         this.show_fukidashi();
@@ -330,18 +331,6 @@
                 }
                 return 50;
             },
-
-            _accessor: {
-                score: {
-                    get: function() {
-                        return this._score;
-                    },
-                    set: function(v) {
-                        this._score = v;
-                        this.scoreLabel.text = v + "えれべーたー";
-                    }
-                }
-            }
         });
 
         phina.define('Fukidashi', {
