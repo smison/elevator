@@ -146,12 +146,77 @@
                 }
             }
         };
-        // シーン
-        var scene = 'title';
+	var SCENES = [
+		{
+			label: 'title',
+			className: 'TitleScene',
+			nextLabel: 'main'
+		},
+		{
+			label: 'main',
+			className: 'MainScene',
+			nextLabel: 'gameover'
+		},
+		{
+			label: 'gameover',
+			className: 'GameOverScene',
+			nextLabel: 'title',
+		},
+	];
         // フキダシ存在フラグ
         var exists_fukidashi = true;
         // ゲームオーバーフラグ
         var is_gameover = false;
+
+        //============================================
+        // タイトルシーン
+        //============================================
+        phina.define('TitleScene', {
+            superClass: 'DisplayScene',
+            init: function () {
+                this.superInit({
+                    width: SCREEN_WIDTH,
+                    height: SCREEN_HEIGHT
+                });
+                this.title = Title('title').addChildTo(this);
+                this.title.x = this.gridX.center();
+                this.title.y = this.gridY.center();
+            },
+
+            onclick: function () {
+		this.exit();
+            },
+	});
+
+        //============================================
+        // ゲームオーバーシーン
+        //============================================
+        phina.define('GameOverScene', {
+            superClass: 'DisplayScene',
+            init: function () {
+                this.superInit({
+                    width: SCREEN_WIDTH,
+                    height: SCREEN_HEIGHT
+                });
+		this.score = arguments[0].score;
+
+		// 背景スプライト
+                this.gameover = Gameover('gameover').addChildTo(this);
+                this.gameover.x = this.gridX.center();
+                this.gameover.y = this.gridY.center();
+
+		// スコアラベル
+                this.resultLabel = Label(this.score + 'えれべーたー').addChildTo(this);
+                this.resultLabel.x = this.gridX.span(12);
+                this.resultLabel.y = this.gridY.span(3);
+            },
+
+            onclick: function () {
+		is_gameover = false;
+		this.exit();
+            },
+	});
+
 
         //============================================
         // メインシーン
@@ -163,33 +228,23 @@
                     width: SCREEN_WIDTH,
                     height: SCREEN_HEIGHT
                 });
-                this.set_title();
+                this.set_main();
             },
 
             update: function () {
-                //////////////
-                //// main ////
-                //////////////
-                if(scene == 'main') {
                     this.speed = this.update_speed();
 
-                    // タイムアップ
                     this.timelimit.width -= this.speed;
-                    if(this.timelimit.width <= 0 && !is_gameover) {
-                        is_gameover = true;
+                    if(this.timelimit.width <= 0) {
+			this.exit("gameover", {score: this.score});
                     }
 
-                    // ゲームオーバーフラグがたっていたらゲームオーバー
-                    if(is_gameover) {
-                        ////////////////////////
-                        /// main => gameover ///
-                        ////////////////////////
-                        is_gameover = false;
-                        this.set_gameover();
+		    if(is_gameover) {
+			this.exit("gameover", {score: this.score});
                     }
 
                     // フキダシ更新
-                    if(!exists_fukidashi && scene == 'main') {
+                    if(!exists_fukidashi) {
                         this.score += 1;
                         this.collect.remove();
                         this.wrong.remove();
@@ -199,30 +254,6 @@
                         // タイムリミット回復
                         this.timelimit.width = MAX_TIME_LIMIT;
                     }
-                }
-            },
-
-            onclick: function () {
-                /////////////////////
-                /// title => main ///
-                /////////////////////
-                if(scene == 'title') {
-                    scene = 'main';
-                    exists_fukidashi = true;
-                    this.title.remove();
-                    this.set_main();
-                }
-
-
-                /////////////////////////
-                /// gameover => title ///
-                /////////////////////////
-                if(scene == 'gameover') {
-                    scene = 'title';
-                    this.gameover.remove();
-                    this.resultLabel.remove();
-                    this.set_title();
-                }
             },
 
             onpointstart: function (app) {
@@ -233,12 +264,6 @@
                 var t = TouchPoint().addChildTo(this);
                 t.x = pointer_x;
                 t.y = pointer_y;
-            },
-
-            set_title: function() {
-                this.title = Title('title').addChildTo(this);
-                this.title.x = this.gridX.center();
-                this.title.y = this.gridY.center();
             },
 
             set_main: function () {
@@ -258,24 +283,8 @@
                 // タイムリミット
                 this.timelimit = TimeLimit(MAX_TIME_LIMIT, 50).addChildTo(this);
 
+                // フキダシ
                 this.show_fukidashi();
-            },
-
-            set_gameover: function() {
-                scene = 'gameover';
-                this.collect.remove();
-                this.wrong.remove();
-                this.timelimit.remove();
-                this.hito.remove();
-                this.scoreLabel.remove();
-
-                this.gameover = Gameover('gameover').addChildTo(this);
-                this.gameover.x = this.gridX.center();
-                this.gameover.y = this.gridY.center();
-
-                this.resultLabel = Label(this.score + 'えれべーたー').addChildTo(this);
-                this.resultLabel.x = this.gridX.span(12);
-                this.resultLabel.y = this.gridY.span(3);
             },
 
             show_fukidashi: function() {
@@ -452,8 +461,8 @@
                 width: SCREEN_WIDTH,
                 height: SCREEN_HEIGHT,
                 assets: ASSETS,
+                scenes: SCENES,
                 title: TITLE,
-                startLabel: 'main',
                 fit: false
             });
             app.run();
